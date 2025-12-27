@@ -6,6 +6,7 @@ from player import *
 from asteroid import *
 from asteroidfield import AsteroidField
 from shot import *
+from rocket import *
 
 def main():
     pygame.init()
@@ -13,10 +14,12 @@ def main():
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
     shots = pygame.sprite.Group()
+    rockets = pygame.sprite.Group()
     AsteroidField.containers = (updatable,)
     Asteroid.containers = (asteroids, updatable, drawable)
     Player.containers = (updatable, drawable)
     Shot.containers = (shots, updatable, drawable)
+    HomingRocket.containers = (rockets, updatable, drawable)
     clock = pygame.time.Clock()
     dt = 0
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -29,8 +32,17 @@ def main():
             if event.type == pygame.QUIT:
                 return
         screen.fill("black")
-        updatable.update(dt)
+        for obj in updatable:
+            # Check if the object is a rocket to pass the asteroids group
+            if isinstance(obj, HomingRocket):
+                obj.update(dt, asteroids)
+            else:
+                obj.update(dt)
         for astro in asteroids:
+            for rocket in rockets:
+                if astro.collides_with(rocket):
+                    astro.split()
+                    rocket.kill()
             for shot in shots:
                 if shot.collides_with(astro):
                     log_event("asteroid_shot")
